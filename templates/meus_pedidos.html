@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}Meus Pedidos - E-commerce{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4"><i class="bi bi-receipt"></i> Meus Pedidos</h2>
+            
+            {% if not pedidos %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> Você ainda não realizou nenhum pedido.
+                    <a href="{{ url_for('listar_produtos') }}" class="alert-link">Comece a comprar agora</a>
+                </div>
+            {% else %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Nº Pedido</th>
+                                <th>Data</th>
+                                <th>Itens</th>
+                                <th>Total</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pedido in pedidos %}
+                            <tr>
+                                <td>#{{ pedido.id }}</td>
+                                <td>{{ pedido.data_pedido|format_datetime }}</td>
+                                <td>{{ pedido.total_itens }}</td>
+                                <td>R$ {{ "%.2f"|format(pedido.total) }}</td>
+                                <td>
+                                    <span class="badge 
+                                        {% if pedido.status == 'completo' %}bg-success
+                                        {% elif pedido.status == 'cancelado' %}bg-danger
+                                        {% elif pedido.status == 'processando' %}bg-warning text-dark
+                                        {% else %}bg-secondary{% endif %}">
+                                        {{ pedido.status|title }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('detalhes_pedido', pedido_id=pedido.id) }}" 
+                                       class="btn btn-sm btn-outline-primary"
+                                       title="Ver detalhes">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    {% if pedido.status == 'pendente' %}
+                                    <a href="#" class="btn btn-sm btn-outline-danger"
+                                       title="Cancelar pedido"
+                                       data-bs-toggle="modal" 
+                                       data-bs-target="#cancelarPedidoModal"
+                                       data-pedido-id="{{ pedido.id }}">
+                                        <i class="bi bi-x-circle"></i>
+                                    </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Cancelamento -->
+<div class="modal fade" id="cancelarPedidoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Cancelar Pedido</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja cancelar este pedido?</p>
+                <p class="fw-bold">Esta ação não pode ser desfeita.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Voltar</button>
+                <form id="formCancelarPedido" method="POST" action="">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-x-circle"></i> Confirmar Cancelamento
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Configura o modal de cancelamento
+    const cancelarModal = document.getElementById('cancelarPedidoModal');
+    if (cancelarModal) {
+        cancelarModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const pedidoId = button.getAttribute('data-pedido-id');
+            const form = document.getElementById('formCancelarPedido');
+            form.action = `/pedidos/${pedidoId}/cancelar`;
+        });
+    }
+    
+    // Inicializa tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
+    tooltipTriggerList.map(function(tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
+{% endblock %}

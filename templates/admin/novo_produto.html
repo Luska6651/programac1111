@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block title %}Cadastrar Novo Produto - Admin{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="bi bi-plus-circle"></i> Cadastrar Novo Produto</h1>
+        <a href="{{ url_for('admin_produtos') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Voltar
+        </a>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <i class="bi bi-box-seam"></i> Informações do Produto
+        </div>
+        
+        <div class="card-body">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <form method="POST" action="{{ url_for('admin_novo_produto') }}" enctype="multipart/form-data">
+                <div class="row g-3">
+                    <!-- Dados Básicos -->
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="nome" class="form-label">Nome do Produto <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="nome" name="nome" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="descricao" class="form-label">Descrição <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="descricao" name="descricao" rows="3" required></textarea>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="preco" class="form-label">Preço (R$) <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text">R$</span>
+                                    <input type="number" class="form-control" id="preco" name="preco" 
+                                           step="0.01" min="0.01" required>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="estoque" class="form-label">Estoque <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="estoque" name="estoque" min="0" value="0" required>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="categoria" class="form-label">Categoria</label>
+                            <input type="text" class="form-control" id="categoria" name="categoria" 
+                                   placeholder="Ex: Eletrônicos, Roupas, Alimentos...">
+                        </div>
+                    </div>
+                    
+                    <!-- Upload de Imagens -->
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="imagens" class="form-label">Imagens do Produto <span class="text-danger">*</span></label>
+                            <input class="form-control" type="file" id="imagens" name="imagens" 
+                                   multiple accept="image/*" required>
+                            <div class="form-text">
+                                Envie pelo menos uma imagem. Formatos aceitos: JPG, PNG, WEBP.
+                            </div>
+                        </div>
+                        
+                        <div class="border p-3 rounded bg-light">
+                            <h5 class="mb-3"><i class="bi bi-image"></i> Pré-visualização</h5>
+                            <div id="preview-container" class="d-flex flex-wrap gap-2">
+                                <div class="text-center text-muted">
+                                    <i class="bi bi-images" style="font-size: 3rem;"></i>
+                                    <p class="mt-2">Nenhuma imagem selecionada</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                    <button type="reset" class="btn btn-outline-secondary me-md-2">
+                        <i class="bi bi-eraser"></i> Limpar
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save"></i> Cadastrar Produto
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const inputImagens = document.getElementById('imagens');
+    const previewContainer = document.getElementById('preview-container');
+    
+    inputImagens.addEventListener('change', function() {
+        previewContainer.innerHTML = '';
+        
+        if (this.files.length === 0) {
+            previewContainer.innerHTML = `
+                <div class="text-center text-muted">
+                    <i class="bi bi-images" style="font-size: 3rem;"></i>
+                    <p class="mt-2">Nenhuma imagem selecionada</p>
+                </div>
+            `;
+            return;
+        }
+        
+        for (const file of this.files) {
+            if (!file.type.startsWith('image/')) continue;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const div = document.createElement('div');
+                div.className = 'position-relative';
+                div.style.width = '120px';
+                div.innerHTML = `
+                    <img src="${e.target.result}" class="img-thumbnail" style="width: 120px; height: 120px; object-fit: cover;">
+                    <div class="position-absolute top-0 end-0 bg-white rounded-circle p-1 m-1">
+                        <span class="badge bg-primary">${previewContainer.children.length + 1}</span>
+                    </div>
+                `;
+                previewContainer.appendChild(div);
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+    
+    // Validação do formulário
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(e) {
+        const preco = parseFloat(document.getElementById('preco').value);
+        const estoque = parseInt(document.getElementById('estoque').value);
+        const imagens = document.getElementById('imagens').files.length;
+        
+        if (preco <= 0) {
+            alert('O preço deve ser maior que zero');
+            e.preventDefault();
+            return;
+        }
+        
+        if (estoque < 0) {
+            alert('O estoque não pode ser negativo');
+            e.preventDefault();
+            return;
+        }
+        
+        if (imagens === 0) {
+            alert('Adicione pelo menos uma imagem do produto');
+            e.preventDefault();
+            return;
+        }
+    });
+});
+</script>
+{% endblock %}
